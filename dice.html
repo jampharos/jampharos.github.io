@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Jam's Die Roller 3000</title>
+    <link rel="stylesheet" type="text/css" href="diceStyle.css" />
+  </head>
+  <body>
+    <h1>Let's roll some dice!</h1>
+    <p>
+      Roll <input type="number" id="dieCount" value="1" />d<input
+        type="number"
+        id="dieSides"
+        value="6"
+      />
+    </p>
+
+    <h2 id="h2"></h2>
+
+    <p id="output"></p>
+    <p id="total"></p>
+
+    <button id="roll" onclick="checkInput()">Roll!</button
+    ><button onclick="window.location.reload();">Reset</button>
+    <p id="hint">Hint: to roll 1 six-sided die, enter 1d6.</p>
+  </body>
+  <script>
+    // Define variables
+    var count = 0;
+    var sides = 0;
+
+    function checkInput() {
+      // Collect user input
+      count = document.getElementById("dieCount").value;
+      sides = document.getElementById("dieSides").value;
+
+      // Convert input to integers
+      count = parseInt(count);
+      sides = parseInt(sides);
+
+      if (count > 20) {
+        window.alert("This app can only roll 20 dice at a time. Sorry!");
+      } else if (sides > 100) {
+        window.alert(
+          "This app can only roll dice with up to 100 sides. Sorry!"
+        );
+      } else {
+        rollDice();
+      }
+    }
+
+    function rollDice() {
+      // Define some variables
+      var diceLeftToRoll = count;
+      var totalValue = 0;
+
+      // Reset the output
+      document.getElementById("output").innerHTML = "";
+      document.getElementById("total").innerHTML = "";
+      document.getElementById("hint").innerHTML = "";
+
+      // Output
+      document.getElementById("h2").innerHTML = "Your rolls:";
+
+      // Die roll loop
+      while (diceLeftToRoll > 0) {
+        var dieValue = Math.max(Math.random() * sides + 1);
+        dieValue = parseInt(dieValue);
+
+        // Console Output
+        console.log("Die " + (count - diceLeftToRoll + 1) + ": " + dieValue);
+
+        // Document Output
+        if (diceLeftToRoll > 1) {
+          dieValueOutput = document.createTextNode(
+            dieValue + "\u00A0\u00A0\u00A0"
+          );
+        } else {
+          dieValueOutput = document.createTextNode(dieValue);
+        }
+        document.getElementById("output").appendChild(dieValueOutput);
+
+        diceLeftToRoll--;
+        totalValue = totalValue + dieValue;
+      }
+      console.log("Total value: " + totalValue);
+      totalOutput = document.createTextNode("Total: " + totalValue);
+      document.getElementById("total").appendChild(totalOutput);
+    }
+  </script>
+</html>
