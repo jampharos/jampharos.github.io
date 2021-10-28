@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+            html {
+              background-color: rgb(245, 245, 107);
+            }
+      
+            h1 {
+              font-family: courier;
+            }
+      
+            body {
+              background-color: white;
+              border-radius: 20px;
+              text-align: center;
+              font-family: courier;
+              margin: 0 15% 0 15%;
+              padding: 0 0 20px 0;
+            }
+      
+            button {
+              font-family: courier;
+              margin: 5px 10% 5px 10%;
+            }
+
+            #div_messages {
+                font-size: 12px;
+                text-align: center;
+                overflow-y: auto;
+                display: flex;
+                height: 100px;
+                width: 70%;
+                margin: 25px 10% 25px 10%;
+                border: 1px dashed black;
+                border-radius: 5px;
+                padding: 0 5% 0 5%;
+            }
+
+          </style>
+        <title>bees?</title>
+    </head>
+    <body>
+        <header>
+            <!-- Header (title and honey) -->
+            <h1>bees?</h1>
+            <h2 id="h2_honey">Honey: 0</h2>
+        </header>
+
+        <!-- Main: For bee count & buttons -->
+        <main>
+            <div id="div_bee_count">
+                You have 1 bee(s) producing 1 honey per second.
+            </div>
+            <div id="div_messages">
+                <br>
+                Welcome to your garden! Watch this box for helpful messages :)
+            </div>
+            <div id="div_buttons">
+                <button id="btn_Flower" onclick="plantFlower();" disabled>Plant flower (10 Honey)</button>
+            </div>
+        </main>
+        
+        <!-- Div for Upgrades -->
+        
+            <h3>Your Garden</h3>
+            <p id="p_flower_count">Your garden doesn't have any flowers :(</p>
+            <div id="div_Upgrades"></div>
+
+        <!-- JavaScript -->
+        <script>
+            // === GLOBAL VARIABLES === 
+            // Score
+            var honey = parseInt(0);
+            var bees = parseInt(1);
+            var honeyPerSecond = parseInt(0);
+
+            // Spawn & Efficiency Rates
+            var beeSpawnRate = parseInt(1);
+            var beeEfficiency = parseInt(1);
+
+            // Flowers
+            var flowerCost = parseInt(10);
+            var flowerCount = parseInt(0);
+            var flowerCostIncrease = parseFloat(1.1);
+
+            // Bee Music
+            var beeMusicCost = parseInt(100);
+            var beeMusicModifier = 0.5;
+            var beeMusicBought = false;
+            var beeMusicButtonVisible = false;
+
+            // Petition
+            var petitionCostThreshold = parseInt(400);
+            var petitionCostModifier = parseFloat(0.9);
+            var petitionCostIncreaseModifier = parseFloat(0.01);
+            var petitionCost = parseInt(1000);
+            var petitionCompleted = false;
+            var petitionButtonVisible = false;
+
+            // Pester Politicians
+            var politiciansPestered = false;
+            var politiciansBeeThreshold = parseInt(15);
+            var politiciansSpawnModifier = parseInt(1);
+            var politiciansCost = parseInt(1500);
+            var politicianButtonVisible = false;
+            
+            // HTML Reference Variables
+            var honey_h2 = document.getElementById("h2_honey");
+            var beeCount_div = document.getElementById("div_bee_count");
+            var buttons_div = document.getElementById("div_buttons");
+            var flowerButton = document.getElementById("btn_Flower");
+            var flowerCount_p = document.getElementById("p_flower_count");
+            var messages_div = document.getElementById("div_messages");
+            var upgrades_div = document.getElementById("div_Upgrades");
+
+            // === END OF GLOBAL VARIABLES ===
+
+
+            // Update Score
+            function updateScore()
+            {
+                // Update Honey Per Second
+                honeyPerSecond = Math.floor(bees * beeEfficiency);
+
+                // Update Outputs
+                honey_h2.innerHTML = "Honey: " + honey;
+                beeCount_div.innerHTML = "You have " + bees + " bee(s) producing " + honeyPerSecond + " honey per second.";
+            }
+
+            // Plant Flower
+            function plantFlower()
+            {
+                // Subtract cost of flower
+                honey -= flowerCost;
+
+                // Update flower cost
+                flowerCost = parseInt(Math.pow(flowerCost, flowerCostIncrease));
+                flowerButton.innerHTML = "Plant flower (" + flowerCost + " Honey)";
+
+                // Add flower + spawn bees
+                bees = bees + (1 * beeSpawnRate);
+                flowerCount++;
+
+                // Update
+                updateScore();
+                checkForUpgrades();
+                flowerCount_p.innerHTML = "Your garden has " + flowerCount + " beautiful flowers!";
+            }
+
+            // Check for Upgrades
+            function checkForUpgrades()
+            {
+                // Checks if flowers can be bought
+                if (honey >= flowerCost) 
+                {
+                    flowerButton.disabled = false;
+                }
+                else {
+                    flowerButton.disabled = true;
+                }
+            
+                // Checks to see if bee music can be bought
+                // a. Has it been bought before?
+                if (beeMusicBought == false)
+                {   // Creates button if we have enough Honey for the first time
+                    if (honey >= beeMusicCost && beeMusicButtonVisible == false)
+                    {
+                        beeMusicButton = document.createElement("button");
+                        beeMusicButton.id = "btn_music";
+                        beeMusicButton.innerHTML = "Play bee music (" + beeMusicCost + " Honey)";
+                        beeMusicButton.addEventListener("click", playBeeMusic);
+                        buttons_div.append(beeMusicButton);
+                        beeMusicButtonVisible = true;
+                    }
+                    else if (honey >= beeMusicCost)
+                    {   // Enables button if we have enough moneny
+                        beeMusicButton.disabled = false;
+                    }
+                    else if (honey < beeMusicCost && beeMusicButtonVisible == true)
+                    {   // Disables button if we don't
+                        beeMusicButton.disabled = true;
+                    }
+                }
+            
+                // Checks if petition can be completed
+                // a. Has it been done before?
+                if (petitionCompleted == false && petitionButtonVisible == false)
+                {
+                    // Creates a button if eligible for the first time
+                    if (flowerCost >= petitionCostThreshold) 
+                    {
+                        petitionButton = document.createElement("button");
+                        petitionButton.id = "btn_petition";
+                        petitionButton.innerHTML = "Start change.org petition complaining about the cost of flowers (" + petitionCost + " Honey)";
+                        petitionButton.addEventListener("click", startPetition);
+                        buttons_div.append(petitionButton);
+                        petitionButtonVisible = true;
+                    }
+                }
+                if (petitionButtonVisible == true) 
+                {
+                    if (honey >= petitionCost)
+                    {
+                        petitionButton.disabled = false;
+                    }
+                    else {
+                        petitionButton.disabled = true;
+                    }
+                }
+            
+                // Checks if we can pester local politicians
+                // a. Has it been done before?
+                if (politiciansPestered == false && politicianButtonVisible == false)
+                {
+                    // creates a button if eligible for the first time
+                    if (bees >= politiciansBeeThreshold)
+                    {
+                        politicianButton = document.createElement("button");
+                        politicianButton.id = "btn_politician";
+                        politicianButton.innerHTML = "Pester local politicians about bee rights (" + politiciansCost + " Honey)";
+                        politicianButton.addEventListener("click", pesterPoliticians);
+                        buttons_div.append(politicianButton);
+                        politicianButtonVisible = true;
+                    }
+                }
+                if (politicianButtonVisible == true)
+                {
+                    if (honey >= politiciansCost)
+                    {
+                        politicianButton.disabled = false;
+                    }
+                    else {
+                        politicianButton.disabled = true;
+                    }
+                }
+
+            } // End up checkForUpgrades()
+            
+            /* 
+                ONE TIME UPGRADES
+            */
+            // Bee Music
+            function playBeeMusic() {
+                // Delete button
+                beeMusicButton.remove();
+                beeMusicButtonVisible = false;
+                beeMusicBought = true;
+
+                // Update bee efficiency
+                beeEfficiency += beeMusicModifier;
+
+                // Output upgrade
+                messages_div.innerHTML += "<br><br>You start playing beautiful bee music and notice the bees working even harder!";
+                upgrades_div.innerHTML += "Gorgeous bee music is playing in your garden!<br>";
+            }
+
+            // Petition
+            function startPetition()
+            {
+                // Delete button
+                petitionButton.remove();
+                petitionCompleted = true;
+
+                // Update flower cost modifier
+                flowerCost = Math.floor(Math.pow(flowerCost, petitionCostModifier));
+                flowerCostIncrease -= petitionCostIncreaseModifier;
+                flowerButton.innerHTML = "Plant flower (" + flowerCost + " Honey)";
+
+                // Output upgrade
+                messages_div.innerHTML += "<br><br>Your petition successfully lowered the cost of flowers!";
+            }
+
+            // Politicians
+            function pesterPoliticians() 
+            {
+                // Delete button
+                politicianButton.remove();
+                politiciansPestered = true;
+
+                // Update bee spawn rate
+                beeSpawnRate += politiciansSpawnModifier;
+
+                // Output upgrade
+                messages_div.innerHTML += "<br><br>You annoyed local politicians so much they implemented pro-bee policies! Flowers will now attract more bees :)";
+            }
+
+            // Timer: Runs every 1 second
+            var myTimerVariable = setInterval(myTimer, 1000);
+            function myTimer() {
+                honeyPerSecond = bees * beeEfficiency;
+                honey += parseInt(honeyPerSecond);
+                checkForUpgrades();
+                updateScore();
+            }
+        </script>
+    </body>
+</html>
