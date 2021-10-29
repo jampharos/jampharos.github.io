@@ -2,42 +2,80 @@
 <html>
     <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta charset="UTF-8">
+        <!-- Google Fonts Stuff -->
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
         <style>
             html {
               background-color: rgb(245, 245, 107);
             }
       
             h1 {
-              font-family: courier;
+              font-family: 'Press Start 2P', 'Courier New', Courier, monospace;  
+              padding: 10px;
+              font-size: 24px;
+              text-shadow: 1px 1px yellow;
+            }
+
+            h2 {
+                font-family: 'Press Start 2P';
+                font-size: 16px;
+            }
+
+            h3 {
+                font-family: 'Press Start 2P', 'Courier New', Courier, monospace;
+                font-size: 13px;
             }
       
             body {
               background-color: white;
               border-radius: 20px;
               text-align: center;
-              font-family: courier;
-              margin: 0 15% 0 15%;
+              font-family: 'Courier New', Courier, monospace;
+              margin: 0 10% 0 10%;
               padding: 0 0 20px 0;
+              box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
             }
       
             button {
-              font-family: courier;
+              font-family: 'Courier New', Courier, monospace;
               margin: 5px 10% 5px 10%;
+              padding: 5px;
             }
 
             #div_messages {
-                font-size: 12px;
+                font-size: 14px;
                 text-align: center;
                 overflow-y: auto;
-                display: flex;
                 height: 100px;
                 width: 70%;
                 margin: 25px 10% 25px 10%;
                 border: 1px dashed black;
                 border-radius: 5px;
                 padding: 0 5% 0 5%;
+                background-color: rgb(0,0,0, 0.025);
+                box-shadow: rgba(60, 64, 67, 0.3) 0px 1px 2px 0px, rgba(60, 64, 67, 0.15) 0px 1px 3px 1px;
             }
 
+            hr {
+                border: none;
+                border-top: 1px dashed gray;
+                width: 50%;
+            }
+
+            #hr_footer {
+                border: none;
+                border-top: 1px dashed black;
+                padding: 0 0 2px 0;
+            }
+
+            footer {
+                font-size: 12px;
+                color: grey;
+                padding: 5px;
+            }
           </style>
         <title>bees?</title>
     </head>
@@ -66,7 +104,14 @@
         
             <h3>Your Garden</h3>
             <p id="p_flower_count">Your garden doesn't have any flowers :(</p>
+            <p id="p_tree_count"></p>
             <div id="div_Upgrades"></div>
+
+        <!-- Footer -->
+        <footer>
+            <hr id="hr_footer">
+            Made by Jamie Antonucci - Version 0.1
+        </footer>
 
         <!-- JavaScript -->
         <script>
@@ -75,15 +120,28 @@
             var honey = parseInt(0);
             var bees = parseInt(1);
             var honeyPerSecond = parseInt(0);
+            const ONE_TIME_UPGRADES = parseInt(4);
+            var upgradesPurchased = parseInt(0);
+            var gameEndMsgOutput = false;
 
             // Spawn & Efficiency Rates
             var beeSpawnRate = parseInt(1);
             var beeEfficiency = parseInt(1);
+            var passiveBeeSpawn = parseInt(0);
+            var passiveBeeTimer = parseInt(5000);
 
             // Flowers
             var flowerCost = parseInt(10);
             var flowerCount = parseInt(0);
             var flowerCostIncrease = parseFloat(1.1);
+
+            // Fruit Trees
+            var fruitTreeCost = parseInt(500);
+            var fruitTreeCount = parseInt(0);
+            var fruitTreeMinFlowers = parseInt(10); // min # of flowers before trees are avail
+            var fruitTreeBees = parseInt(5); // bees spawned by fruit trees
+            var fruitTreeCostIncrease = parseFloat(1.05);
+            var fruitTreesEnabled = false;
 
             // Bee Music
             var beeMusicCost = parseInt(100);
@@ -101,10 +159,17 @@
 
             // Pester Politicians
             var politiciansPestered = false;
-            var politiciansBeeThreshold = parseInt(15);
+            var politiciansBeeThreshold = parseInt(20);
             var politiciansSpawnModifier = parseInt(1);
             var politiciansCost = parseInt(1500);
             var politicianButtonVisible = false;
+
+            // Skywriter
+            var skywriterPurchased = false;
+            var skywriterBeeTreshold = parseInt(32);
+            var skywriterCost = parseInt(2500);
+            var skywriterPassiveIncrease = parseInt(1);
+            var skywriterButtonVisible = false;
             
             // HTML Reference Variables
             var honey_h2 = document.getElementById("h2_honey");
@@ -112,12 +177,15 @@
             var buttons_div = document.getElementById("div_buttons");
             var flowerButton = document.getElementById("btn_Flower");
             var flowerCount_p = document.getElementById("p_flower_count");
+            var treeCount_p = document.getElementById("p_tree_count");
             var messages_div = document.getElementById("div_messages");
             var upgrades_div = document.getElementById("div_Upgrades");
 
             // === END OF GLOBAL VARIABLES ===
 
-
+            /*
+                === MAIN FUNCTIONS - UPGRADES & SCORES ===
+            */
             // Update Score
             function updateScore()
             {
@@ -125,28 +193,8 @@
                 honeyPerSecond = Math.floor(bees * beeEfficiency);
 
                 // Update Outputs
-                honey_h2.innerHTML = "Honey: " + honey;
-                beeCount_div.innerHTML = "You have " + bees + " bee(s) producing " + honeyPerSecond + " honey per second.";
-            }
-
-            // Plant Flower
-            function plantFlower()
-            {
-                // Subtract cost of flower
-                honey -= flowerCost;
-
-                // Update flower cost
-                flowerCost = parseInt(Math.pow(flowerCost, flowerCostIncrease));
-                flowerButton.innerHTML = "Plant flower (" + flowerCost + " Honey)";
-
-                // Add flower + spawn bees
-                bees = bees + (1 * beeSpawnRate);
-                flowerCount++;
-
-                // Update
-                updateScore();
-                checkForUpgrades();
-                flowerCount_p.innerHTML = "Your garden has " + flowerCount + " beautiful flowers!";
+                honey_h2.innerHTML = "Honey: " + honey.toLocaleString("en-US");
+                beeCount_div.innerHTML = "You have " + bees.toLocaleString("en-US") + " bee(s) producing " + honeyPerSecond + " honey per second.";
             }
 
             // Check for Upgrades
@@ -161,6 +209,34 @@
                     flowerButton.disabled = true;
                 }
             
+                // Checks if fruit trees can be bought
+                // a. enabled already?
+                if (fruitTreesEnabled == false)
+                {
+                    // b. enough flowers to spawn fruit trees?
+                    if (flowerCount >= fruitTreeMinFlowers)
+                    {
+                        fruitTreeButton = document.createElement("button");
+                        fruitTreeButton.id = "btn_tree";
+                        fruitTreeButton.innerHTML = "Plant fruit tree (" + fruitTreeCost.toLocaleString("en-US") + " Honey)";
+                       fruitTreeButton.addEventListener("click", plantFruitTree);
+                        buttons_div.append(fruitTreeButton);
+                        fruitTreesEnabled = true;
+                        output("You can now plant lovely fruit trees in your garden! Lucky you :-)");
+                    }
+                }
+                if (fruitTreesEnabled == true)
+                {
+                    if (honey > fruitTreeCost)
+                    {
+                        fruitTreeButton.disabled = false;
+                    }
+                    else
+                    {
+                        fruitTreeButton.disabled = true;
+                    }
+                }
+
                 // Checks to see if bee music can be bought
                 // a. Has it been bought before?
                 if (beeMusicBought == false)
@@ -169,7 +245,7 @@
                     {
                         beeMusicButton = document.createElement("button");
                         beeMusicButton.id = "btn_music";
-                        beeMusicButton.innerHTML = "Play bee music (" + beeMusicCost + " Honey)";
+                        beeMusicButton.innerHTML = "Play bee music (" + beeMusicCost.toLocaleString("en-US") + " Honey)";
                         beeMusicButton.addEventListener("click", playBeeMusic);
                         buttons_div.append(beeMusicButton);
                         beeMusicButtonVisible = true;
@@ -193,7 +269,7 @@
                     {
                         petitionButton = document.createElement("button");
                         petitionButton.id = "btn_petition";
-                        petitionButton.innerHTML = "Start change.org petition complaining about the cost of flowers (" + petitionCost + " Honey)";
+                        petitionButton.innerHTML = "Start change.org petition complaining about the cost of flowers (" + petitionCost.toLocaleString("en-US") + " Honey)";
                         petitionButton.addEventListener("click", startPetition);
                         buttons_div.append(petitionButton);
                         petitionButtonVisible = true;
@@ -219,7 +295,7 @@
                     {
                         politicianButton = document.createElement("button");
                         politicianButton.id = "btn_politician";
-                        politicianButton.innerHTML = "Pester local politicians about bee rights (" + politiciansCost + " Honey)";
+                        politicianButton.innerHTML = "Pester local politicians about bee rights (" + politiciansCost.toLocaleString("en-US") + " Honey)";
                         politicianButton.addEventListener("click", pesterPoliticians);
                         buttons_div.append(politicianButton);
                         politicianButtonVisible = true;
@@ -236,10 +312,91 @@
                     }
                 }
 
+                // Skywriter
+                // Check to see if it's been purchased before
+                if (skywriterPurchased == false && skywriterButtonVisible == false)
+                {
+                    // creates a button if eligible for the first time
+                    if (bees >= skywriterBeeTreshold)
+                    {
+                        skywriteButton = document.createElement("button");
+                        skywriteButton.id = "btn_skywrite";
+                        skywriteButton.innerHTML = "Hire skywriter to advertise your garden to bees (" + skywriterCost.toLocaleString("en-US") + " Honey)";
+                        skywriteButton.addEventListener("click", hireSkywriter);
+                        buttons_div.append(skywriteButton);
+                        skywriterButtonVisible = true;
+                    }
+                }
+                if (skywriterButtonVisible == true)
+                {
+                    if (honey >= skywriterCost)
+                    {
+                        skywriteButton.disabled = false;
+                    }
+                    else {
+                        skywriteButton.disabled = true;
+                    }
+                }
+
+                // Outputs a message after a delay if everything has been bought
+                if (upgradesPurchased == ONE_TIME_UPGRADES && gameEndMsgOutput == false)
+                {
+                    gameEndMsgOutput = true;
+                    setTimeout(function()
+                    {
+                        output("You've bought all the one-time upgrades! That means you've seen all there is to see right now. Check back later!<br><br> Thank you for playing my game! :-)");
+                    }, 5000);
+                }
             } // End up checkForUpgrades()
             
+            /*
+                === REPEATABLE UPGRADES ===
+            */
+
+            // Plant Flower
+            function plantFlower()
+            {
+                // Subtract cost of flower
+                honey -= flowerCost;
+
+                // Update flower cost
+                flowerCost = parseInt(Math.pow(flowerCost, flowerCostIncrease));
+                flowerButton.innerHTML = "Plant flower (" + flowerCost.toLocaleString("en-US") + " Honey)";
+
+                // Add flower + spawn bees
+                bees = bees + (1 * beeSpawnRate);
+                flowerCount++;
+
+                // Update
+                updateScore();
+                checkForUpgrades();
+                flowerCount_p.innerHTML = "Your garden has " + flowerCount.toLocaleString("en-US") + " beautiful flowers!";
+            }
+
+            // Plant Fruit Tree
+            function plantFruitTree()
+            {
+                // Subtract cost of tree
+                honey -= fruitTreeCost;
+
+                // Update fruit tree cost
+                fruitTreeCost = parseInt(Math.pow(fruitTreeCost, fruitTreeCostIncrease));
+                fruitTreeButton.innerHTML = "Plant fruit tree (" + fruitTreeCost.toLocaleString("en-US") + " Honey)";
+
+                // Add fruit tree & bees
+                fruitTreeCount++;
+                bees += fruitTreeBees;
+
+                // Update
+                updateScore();
+                checkForUpgrades();
+                treeCount_p.innerHTML = fruitTreeCount.toLocaleString("en-US") + " lovely fruit trees surround your garden!";
+
+            }
+
+
             /* 
-                ONE TIME UPGRADES
+               === ONE TIME UPGRADES ===
             */
             // Bee Music
             function playBeeMusic() {
@@ -251,8 +408,12 @@
                 // Update bee efficiency
                 beeEfficiency += beeMusicModifier;
 
+                // Pay for upgrade
+                honey -= beeMusicCost;
+                upgradesPurchased++;
+
                 // Output upgrade
-                messages_div.innerHTML += "<br><br>You start playing beautiful bee music and notice the bees working even harder!";
+                output("You start playing beautiful bee music and notice the bees working even harder!");
                 upgrades_div.innerHTML += "Gorgeous bee music is playing in your garden!<br>";
             }
 
@@ -266,10 +427,14 @@
                 // Update flower cost modifier
                 flowerCost = Math.floor(Math.pow(flowerCost, petitionCostModifier));
                 flowerCostIncrease -= petitionCostIncreaseModifier;
-                flowerButton.innerHTML = "Plant flower (" + flowerCost + " Honey)";
+                flowerButton.innerHTML = "Plant flower (" + flowerCost.toLocaleString("en-US") + " Honey)";
+
+                // Pay for upgrade
+                honey -= petitionCost;
+                upgradesPurchased++;
 
                 // Output upgrade
-                messages_div.innerHTML += "<br><br>Your petition successfully lowered the cost of flowers!";
+                output("Your petition successfully lowered the cost of flowers!");
             }
 
             // Politicians
@@ -281,9 +446,41 @@
 
                 // Update bee spawn rate
                 beeSpawnRate += politiciansSpawnModifier;
+                upgradesPurchased++;
+
+                // Pay for upgrade
+                honey -= politiciansCost;
 
                 // Output upgrade
-                messages_div.innerHTML += "<br><br>You annoyed local politicians so much they implemented pro-bee policies! Flowers will now attract more bees :)";
+                output("You annoyed local politicians so much they implemented pro-bee policies! Flowers will now attract more bees :)");
+            }
+            
+            // Skywriter
+            function hireSkywriter()
+            {
+                // Delete button
+                skywriteButton.remove();
+                skywriterPurchased = true;
+
+                // Update passive bee spawn rate
+                passiveBeeSpawn += skywriterPassiveIncrease;
+                upgradesPurchased++;
+
+                // Pay for upgrade
+                honey -= skywriterCost;
+
+                // Output upgrade
+                output("You hired a skywriter to draw the cutest bee over your garden. Bees will now come to your garden on their own!");
+            }
+
+            /*
+               === CRITICAL FUNCTIONS ===
+            */
+
+            // Output
+            function output(str)
+            {
+                messages_div.innerHTML = "<br>" + str + "<br><hr>" + messages_div.innerHTML;
             }
 
             // Timer: Runs every 1 second
@@ -293,6 +490,13 @@
                 honey += parseInt(honeyPerSecond);
                 checkForUpgrades();
                 updateScore();
+            }
+
+            // Bee Spawn Timer
+            var beeTimerVariable = setInterval(beeTimer, passiveBeeTimer);
+            function beeTimer()
+            {
+                bees += passiveBeeSpawn;
             }
         </script>
     </body>
