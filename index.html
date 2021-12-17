@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta charset="UTF-8">
+        <meta name="description" content="An online store with tons of useful magical items and potions for everyday life!">
+        <link  rel="stylesheet" type="text/css" href="main.css">
+
+        <!-- GOOGLE FONTS -->
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Berkshire+Swash&display=swap" rel="stylesheet">
+
+        <title>Abracapothecary</title>
+    </head>
+    <body>
+        <!-- HEADER -->
+        <!-- Note: Header is sticky, so try to keep it "short" -->
+        <header>
+            <h1>Abracapothecary</h1>
+            <div>
+                <a href="#divCart"><img id="cartIcon" alt="An icon of a shopping cart" src="images/carticon.png"></a>
+                
+            </div>
+            <span id="spanDateTime"></span>
+        </header>
+
+        <!-- MAIN -->
+        <main>
+
+            <!-- ABOUT OUR STORE -->
+            <div id="divAbout">
+                <h2>Welcome to the Abracapothecary</h2>
+                <p>
+                    Are you an adventurer new to this material plane? Does technology confuse you? If you're more used to potions and magic wands than whatever a "smartphone" is, you're in the right place!
+                </p>
+                <p>
+                    Our carefully curated selection includes magical items that allow you to create fires, recall information, improve your focus and much, much more!
+                </p>
+            </div>
+
+            <hr>
+
+            <!-- STORE -->
+            <div id="divStore">
+                <h2>Our Inventory</h2>
+                <br>
+
+                <!-- STORE NAVIGATION -->
+                <div id="divStoreNav">
+
+                    <!-- DEPARTMENT SELECTION-->
+                    <select name="selectDept" id="selectDept" onchange="displayInventory();">
+                        <option selected disabled value="all">= DEPARTMENT =</option>
+                        <option value="all">View All</option>
+                        <!-- Remainder of options populated by JavaScript -->
+                    </select>
+
+                    <!-- CURRENCY SELECTION -->
+                    <select name="selectCurrency" id="selectCurrency" onchange="displayInventory(); displayCart();">
+                        <option selected disabled value="cad">= CURRENCY =</option>
+                        <option value="cad">Canadian $ (CAD)</option>
+                        <option value="usd">US $ (USD)</option>
+                        <option value="gp">Gold Pieces (gp)</option>
+                    </select>
+
+                </div>
+                <!-- end store navigation -->
+
+                <!-- STOCK -->
+                <div id="divStoreStock">
+
+                </div>
+
+            </div>
+            <a class="backToTop" href="#">Back to Top</a>
+            <!-- end store -->
+
+            <hr>
+
+            <!-- CART -->
+            <div id="divCart">
+                <h2>Cart:</h2>
+                <ul id="ulCart">
+                    <li>Your cart is empty.</li>
+                </ul>
+                <ul id="ulCartTotals"></ul>
+
+            </div>
+            <a class="backToTop" href="#">Back to Top</a>
+
+            <hr>
+        </main>
+
+        
+
+        <!-- FOOTER -->
+        <footer>
+            Jamie Antonucci 2021 - <a href="mailto:j_antonucci@fanshaweonline.ca">Contact Webmaster</a>
+        </footer>
+        
+
+        <script>
+            /*
+                OBJECT CONSTRUCTORS
+            */
+
+            function StoreItem(id, name, priceCAD, qty, max, dept, shipCost, reviews, desc, image)
+            {
+                // Properties 
+                this.id = id,
+                this.name = name,
+                this.priceCAD = priceCAD,
+                this.qty = parseInt(qty),
+                this.max = parseInt(max),
+                this.dept = dept,
+                this.shipCost = shipCost,
+                this.reviews = reviews,
+                this.desc = desc,
+                this.image = image;
+                
+                // Methods
+                // Using methods to ensure it's impossible to add more to the cart than is available seemed better than just validating the input
+                this.qtyMinusCart = function() {
+
+                    // Declare variable, =qty so if there's no match, nothing is subtracted
+                    var q = this.qty;
+
+                    for (var i = 0; i < aCart.length; i++)
+                    {                                            
+                        // Looks for item in cart
+                        if (this.id == aCart[i].id)
+                        {
+                            // Subtracts amount in cart
+                            var q = parseInt(this.qty - aCart[i].qtyInCart);
+                        }             
+                    }
+
+                    return q;
+                } // end qtyMinusCart
+
+                this.available = function() {
+                    
+                    // Declare variable, =max so if there's no match, nothing is subtracted
+                    var a = this.max;
+
+                    for (var i2 = 0; i2 < aCart.length; i2++)
+                    {
+                        // Looks for item in cart
+                        if (this.id == aCart[i2].id)
+                        {
+                            // Subtracts amount in cart
+                            var a = parseInt(this.max - aCart[i2].qtyInCart);
+                        }
+                    }
+                    
+                    return a;
+                } // end available
+
+            }// end StoreItem constructor
+
+            function CartItem(id, name, priceCAD, qtyInCart, shipCost)
+            {
+                this.id = id,
+                this.name = name,
+                this.priceCAD = priceCAD,
+                this.qtyInCart = qtyInCart,
+                this.shipCost = shipCost;
+            }
+
+            function Review(review, author)
+            {
+                this.review = review,
+                this.author = author;
+            }
+
+            /*
+                GLOBAL VARIABLES
+            */
+
+            var aInventory = [];
+            var aCart = [];
+
+            // Currency variables
+            var selectedCurrency = "cad"; // default
+            var cadToUSD = 0.79; // multiplier to convert CAD to USD
+            var cadToGP = 0.2; // multiplier to convert CAD to gp (gold pieces)
+
+            /*
+                FUNCTIONS
+            */
+
+            /*
+                pageLoad()
+                Displays current date/time; populates inventory array with stock; calls displayInventory and displayCart
+            */
+
+            pageLoad();
+            displayInventory();
+
+            function pageLoad()
+            {
+                // Display current date/time
+                var currentDateTime = new Date();
+                var spanDateTime = document.getElementById("spanDateTime");
+
+                spanDateTime.innerHTML = friendlyDateTime(currentDateTime);
+
+                // Populate inventory array
+                // id - name - price - qty - max - dept - shipCost - reviews - desc - image
+                // == APPAREL ==
+                aInventory.push(new StoreItem(
+                    "CL001", "Gloves of Cold Resistance", 14.99, 12, 5, "Apparel", 2.50,
+                    [   // Reviews
+                        (new Review("They work great! My hands are nice and toasty!", "Jacinta S")),
+                        (new Review("I prefer just sticking my hands into some warm bread.", "Caleb W"))
+                    ],
+                    "These gloves protect the wearer from ambient cold. May not work while wet.",
+                    "images/glovesOfColdResistence.jpg"
+                ));
+                aInventory.push(new StoreItem(
+                    "CL002", "Gloves of Heat Resistence", 19.99, 9, 5, "Apparel", 2.50,
+                    [   // Reviews
+                        (new Review("Wow! I was able to pick up a cauldron of boiling liquid without scalding my hands!", "Isharnai H")),
+                        (new Review("I wanted to test if these work so I lit a pile of them on fire. They burned up as if they weren't even magical. DO NOT BUY.", "Adam S")),
+                        (new Review("I don't know if these work yet but they're very cute!!!!", "Freya M"))
+                    ],
+                    "These gloves protect the wearer from heat. May not protect from flame.",
+                    "images/glovesOfHeatResistence.png"
+                ));
+                aInventory.push(new StoreItem(
+                    "CL003", "Glasses of Sun Protection", 18.99, 22, 5, "Apparel", 1.50,
+                    [   // Reviews
+                        (new Review("These are so useful and stylish I even wear them at night.", "Corey H")),
+                        (new Review("These don't help me fight crime, 0/10", "Norman J")),
+                        (new Review("I can't read suddenly. I don't know.", "Mariah C"))
+                    ],
+                    "These cool glasses have black lenses that protect the wearer from damage caused by sunlight or other bright light. They also make you look way cooler, like a lot cooler.",
+                    "images/glassesOfSunProtection.jpg"
+                ));
+
+                // == POTIONS ==
+                aInventory.push(new StoreItem(
+                    "POT001", "Potion of Hydration", 2.99, 93, 24, "Potions", 4,
+                    [   // Reviews
+                        (new Review("So refreshing! Wow! I should drink like 8 of these a day!", "Demir A")),
+                        (new Review("7.8/10 too much water", "Kallie P")),
+                        (new Review("It works okay, but it's so watered down that you can hardly taste it.", "Esma Y")),
+                        (new Review("Protip: Try freezing some of it and drink it with the frozen chunks in it. It tastes way better cold!", "Betty T"))
+                    ],
+                    "This refreshing, all-natural potion treats dehydration and exhaustion. Free from artificial colours, flavours, sweeteners and preservatives.",
+                    "images/potionOfHydration.jpg"                    
+                ));
+                aInventory.push(new StoreItem(
+                    "POT002", "Potion of Sleep", 11.99, 13, 3, "Potions", 6,
+                    [   // Reviews
+                        (new Review("The taste is awful, but it's effective.", "Tomas H")),
+                        (new Review("AWESOME!!! Helps me sleep EVEN ON THE TOUR BUS!", "Jeff R")),
+                        (new Review("I don't think this works at all, I'm not even tirrrrrrrrrrr", ""))
+                    ],
+                    "This calming, relaxing potion helps lull the drinker into a peaceful sleep. May also help with allergy symptoms and nausea.",
+                    "images/potionOfSleep.webp"
+                ));
+                aInventory.push(new StoreItem(
+                    "POT003", "Potion of Focus", 7.99, 33, 6, "Potions", 4,
+                    [   // Reviews
+                        (new Review("I've been awake for 3 days but all of my homework is done!!!!!!!", "Nina R")),
+                        (new Review("This did nothing for me.", "Kimiko I")),
+                        (new Review("Tastes more like coffee than the sludge I make!", "Tim H"))
+                    ],
+                    "This potion improves focus and concentration, and prevents drowziness. Recommended for use in the morning.",
+                    "images/potionOfFocus.webp"
+                ));
+                aInventory.push(new StoreItem(
+                    "POT004", "Potion of Decreased Focus", 10.99, 14, 3, "Potions", 6,
+                    [   // Reviews
+                        (new Review("Tastes great, definitely decreased my focus, which was great because I didn't actually want to watch another stupid Marvel movie", "Darryl W")),
+                        (new Review("Too hoppy. 0 stars.", "Zita A")),
+                    ],
+                    "Made from natural ingredients, this refreshing potion reduces focus and increases sociability.",
+                    "images/potionOfDecreasedFocus.jpg"
+                ));
+
+                // == WANDS AND STAVES ==
+                aInventory.push(new StoreItem(
+                    "WAST001", "Staff of Water Protection", 23.99, 4, 1, "Wands/Staves", 10,
+                    [   // Reviews
+                        (new Review("I mean, it kept me dry, so I guess it did its job?", "Dinesh O")),
+                        (new Review("This staff changed my life.", "Taako T")),
+                        (new Review("It's just an umbrella?", "Dina R"))
+                    ],
+                    "Pressing a button on this staff causes a protective barrier to emerge from the top, protecting the user from water. The barrier may be pointed at different sources of water to shield the user.",
+                    "images/staffOfWaterProtection.jpg"
+                ));
+                aInventory.push(new StoreItem(
+                    "WAST002", "Staff of Move Earth", 27.99, 3, 1, "Wands/Staves", 15.50,
+                    [   // Reviews
+                        (new Review("Hard to use. Not recommended.", "Liliana N")),
+                        (new Review("Works great if you're not afraid of hard work. Definitely easier than trying to move dirt without it.", "Jesse P")),
+                        (new Review("Save yourself the $28 and just let me dig in your yard for free please", "Jiji T"))
+                    ],
+                    "When used, this staff allows the easy movement of earth or other materials from one location to another. Can also be used to create holes.",
+                    "images/staffOfMoveEarth.jpg"
+                ));
+                aInventory.push(new StoreItem(
+                    "WAST003", "Wand of Create Fire", 13.99, 8, 1, "Wands/Staves", 7.50,
+                    [   // Reviews
+                        (new Review("You call this a fire??? This is tiny. How am I supposed to burn down a house with this?", "Bren E")),
+                        (new Review("I've used similar wands before to light candles, but this lets me light them without getting soot all over my hands!", "Joane A")),
+                        (new Review("Baby toy for kids. Give me a flamethrower.", "Aubrey L"))
+                    ],
+                    "This wand has a small trigger. When depressed, this trigger causes a small flame to appear at the wand's tip. Great for lighting candles and other small objects.",
+                    "images/wandOfCreateFire.jpg"
+                ));
+                aInventory.push(new StoreItem(
+                    "WAST004", "Wand of Detect Temperature", 34.99, 2, 1, "Wands/Staves", 11.50,
+                    [   // Reviews
+                        (new Review("Works great when traditional methods of checking temperature are not possible.", "Sydnee M")),
+                        (new Review("I just think it looks cool", "Zahra H")),
+                        (new Review("WARNING DOES NOT WORK OUTSIDE. WILL NOT TELL YOU HOW HOT IT IS OUTSIDE. WHY DID I WASTE SO MUCH MONEY ON THIS", "SCAMLIKELY F"))
+                    ],
+                    "Just point this convenient wand at an item or individual you wish to know the temperature of. No more need to touch things that are too hot or cold!",
+                    "images/wandOfDetectTemperature.jpg"
+                ));
+                aInventory.push(new StoreItem(
+                    "WAST005", "Wands of Create Scarf", 18.99, 7, 1, "Wands/Staves", 4.50,
+                    [   // Reviews
+                        (new Review("I prefer crochet.", "Leah T")),
+                        (new Review("Instructions unclear, made a blanket instead somehow???", "Victor H")),
+                        (new Review("Takes forever to work and you have to keep waving the wands in this really intricate pattern. I don't like it.", "Amara A"))
+                    ],
+                    "These wands are capable of creating beautiful scarves. Please note yarn is required as a material component of the spell these wands cast.",
+                    "images/wandsOfCreateScarf.jpg"
+                ));
+
+                // == MISC == 
+                aInventory.push(new StoreItem(
+                    "MISC001", "Coin of Random Chance", 1.00, 100, 100, "Misc", 1,
+                    [   // Reviews
+                        (new Review("Only two sides means only two timelines. So it shouldn't be too bad.", "Abed N")),
+                        (new Review("Why is there a bird on it???", "Yui T")),
+                        (new Review("This coin meant my wife had to make dinner last night, so I'm very happy with it", "Grazyna M"))
+                    ],
+                    "When tossed into the air, this magical coin has an equal chance of landing on either of its two sides. Great for decision making!",
+                    "images/coinOfRandomChance.jpg"
+                ));
+                aInventory.push(new StoreItem(
+                    "MISC002", "Notebook of Remembering", 4.99, 24, 6, "Misc", 1,
+                    [   // Reviews
+                        (new Review("A lot of work to use but once you figure it out it works great", "Beau L")),
+                        (new Review("I shouldn't have to actually write in this. It should just work.", "Jessie L")),
+                        (new Review("NOT RESISTENT TO FIRE", "REGRET R")),
+                        (new Review("Doesn't work if you have messy handwriting.", "Marisha R"))
+                    ],
+                    "Anything written in this notebook is magically recalled when the notebook is open and read.",
+                    "images/notebookOfRemembering.jpg"
+                ));
+                aInventory.push(new StoreItem(
+                    "MISC003", "Fanny Pack of Holding", 79.99, 1, 1, "Misc", 5,
+                    [   // Reviews
+                        (new Review("Wow! It fits as much as you'd think!", "Kanna R")),
+                        (new Review("Makes you look really cool. Like really really cool.", "Iman A")),
+                        (new Review("So convenient, having your inventory accessible on your hip instead of your back!", "Jean-Francois M"))
+                    ],
+                    "This stylish bag wraps around the wearer's waist. Items stored in it are transported to a pocket dimension located inside the bag that has the exact same dimensions and weight limits as the bag itself.",
+                    "images/packOfHolding.jpg"
+                ));
+
+                // Populate department dropdown
+                populateDeptDropdown();
+
+
+            } // end page load
+
+            /*
+                displayInventory()
+                Displays the items in the store in an inventory grid.
+
+            */
+
+            function displayInventory()
+            {
+                // Clear page
+                var divStoreStock = document.getElementById("divStoreStock");
+                divStoreStock.innerHTML = "";
+
+                // Get selected department(s)
+                var selectedDept = document.getElementById("selectDept").value;
+
+                // Get selected currency
+                selectedCurrency = document.getElementById("selectCurrency").value;
+                
+                // Output items
+                for (var i = 0; i < aInventory.length; i++)
+                {
+                    var item = aInventory[i];
+
+                    // Only output item if it matches the department
+                    if (selectedDept == item.dept || selectedDept == "all")
+                    {
+                        // Create DOM elements
+                        var tempDiv = document.createElement("div");
+                        tempDiv.className = "divItem";
+                        tempDiv.id = item.id;
+
+                        var tempDivDetails = document.createElement("div");
+                        tempDivDetails.className = "tempDivDetails";
+                        tempDivDetails.id = (item.id + "Details");
+
+                        // DOM Elements visible by default
+                        var tempBr = document.createElement("br");
+                        var tempH3 = document.createElement("h3");
+                        var tempPrice = document.createElement("span");
+                        var tempDescHeader = document.createElement("h4");
+                        var tempDescription = document.createElement("p");
+                        var tempImage = document.createElement("img");
+                        var tempCartButton = document.createElement("button");
+                        var tempCartQty = document.createElement("input");
+                        var tempDetails = document.createElement("h4");
+
+                        // DOM Elements hidden by default
+                        var tempId = document.createElement("span");
+                        var tempQty = document.createElement("span"); // also contains max per customer
+                        var tempDept = document.createElement("span");
+                        var tempShipCost = document.createElement("span");
+                        var tempReviewsHeader = document.createElement("h5");
+                        var tempReviews = document.createElement("div");
+                        var tempDot = document.createElement("span");
+                        var tempReviewHeader = document.createElement("h4");
+                        var tempAddReview = document.createElement("button");
+
+                        // Populate DOM elements with item data
+                        // Items visible by default:
+                        tempH3.innerHTML = item.name;
+                        tempPrice.innerHTML = outputPrice(item.priceCAD, selectedCurrency);
+                        tempPrice.classList.add("price");
+                        tempDescHeader.innerHTML = "Item Description:";
+                        tempDescription.innerHTML = item.desc;
+                        tempImage.src = item.image;
+                        tempCartButton.innerHTML = "Add to Cart";
+                        tempDetails.innerHTML = "More Information ↓";
+                        tempDetails.classList.add("moreInfo");
+                        tempDivDetails.classList.add("hidden");
+
+                        // Input field to change qty
+                        tempCartQty.setAttribute("type", "number");
+                        tempCartQty.setAttribute("value", 1);
+                        tempCartQty.setAttribute("max", item.available());
+                        //console.log(item.name + " max: " + item.max + " qtyminuscart: " + item.qtyMinusCart() + " avail: " + (item.max - item.qtyMinusCart()));
+                        //console.log(item.name + " " + item.available);
+                        // "available" is the lowest of the qty in stock minus the cart, or the max per customer minus cart
+                        tempCartQty.setAttribute("min", 1);
+
+                        // Items hidden by default
+                        tempId.innerHTML = "<strong>ID: </strong>" + item.id;
+                        tempQty.innerHTML = "<strong>" + item.qtyMinusCart() + "</strong> in stock (up to <strong>" + item.max + "</strong> per customer)";
+                        tempDept.innerHTML = "<strong>Dept: </strong>" + item.dept;
+                        tempShipCost.innerHTML = "<strong>Shipping Cost: </strong>" + item.shipCost;
+                        tempDot.innerHTML = " · ";
+                        tempReviewHeader.innerHTML = "Reviews:";
+                        tempAddReview.innerHTML = "Review this Product";
+
+                        // Need a loop to output reviews
+
+                        // Create review div
+                        var tempReviewDiv = document.createElement("div");
+                        tempReviewDiv.classList.add("reviewDiv");
+
+                        for (var i2 = 0; i2 < item.reviews.length; i2++)
+                        {
+                            // Create DOM element
+                            var tempReview = document.createElement("p");
+                            tempReview.classList.add("review");
+
+                            // Populate
+                            if (item.reviews[i2].author == "")
+                            {
+                                item.reviews[i2].author = "Anonymous User";
+                            };
+                            tempReview.innerHTML = '"' + item.reviews[i2].review + '"<br> <em>-' + item.reviews[i2].author + "</em>";
+
+                            // Add to page
+                            tempReviewDiv.appendChild(tempReview);                            
+                        } // end review for
+
+                        // Leave review button
+                        tempReviewDiv.appendChild(tempAddReview);
+
+                        // EVENT LISTENERS 
+                        // ADD TO CART BUTTON
+                        tempCartButton.addEventListener("click", function () {
+                            // Access DOM elements
+                            var addToCartId = this.parentElement.id;
+
+                            // Finds the index of the item with an ID that matches the div
+                            var addToCartIndex = aInventory.findIndex(function (StoreItem) 
+                            {
+                                return StoreItem.id == addToCartId;
+                            });
+                            var itemToAdd = aInventory[addToCartIndex];
+
+                            // Finds quantity from textbox
+                            // **** INPUT IS CHILDNODE 7 RIGHT NOW, CHANGE IF THAT CHANGES ****
+                            var addToCartQty = parseInt(this.parentElement.childNodes[7].value);
+
+                            // Adding item to cart
+
+                            // Look through aCart - if item exists, update qtyInCart
+                            var inCart = false;
+                            
+                            for (var iCart = 0; iCart < aCart.length; iCart++)
+                            {
+                                if (aCart[iCart].id == itemToAdd.id)
+                                {
+                                    inCart = true;
+
+                                    // Output message if cart addition would exceed maximum
+                                    if ((aCart[iCart].qtyInCart + addToCartQty) > itemToAdd.max)
+                                    {
+                                        var tempErrorMsg = document.createElement("p");
+                                        tempErrorMsg.innerHTML = "Sorry, there is a maximum of " + itemToAdd.max + " per customer.";
+                                        alert(tempErrorMsg.innerHTML);
+                                    }
+
+                                    aCart[iCart].qtyInCart = Math.min((aCart[iCart].qtyInCart + addToCartQty), itemToAdd.max);
+                                } // end inner if
+                            } // end for
+
+                            // If item doesn't exist, create item and add to aCart
+                            if (inCart == false)
+                            {
+                                var newCartItem = new CartItem(itemToAdd.id, itemToAdd.name, itemToAdd.priceCAD, addToCartQty, itemToAdd.shipCost);
+                                aCart.push(newCartItem);
+                            }                            
+                            
+                            // Update onhand quantity -- done using an object method instead
+                                                      
+                            // Call displayCart() and displayInventory()
+                            // displayInventory() is called again to update max qty in input field
+                            displayCart();
+                            displayInventory();
+                        }); // END OF CART BUTTON
+
+                        // "MORE INFORMATION"
+                        tempDetails.addEventListener("click", function () {
+                            var tempDetailsDivToggle = document.getElementById(this.parentElement.id + "Details");
+
+                            // If details div visible, hide it. If hidden, make visible.
+                            if (tempDetailsDivToggle.classList.contains("hidden"))
+                            {
+                                tempDetailsDivToggle.classList.remove("hidden");
+                            }
+                            else
+                            {
+                                tempDetailsDivToggle.classList.add("hidden");
+                            };
+                        }); // end details link
+
+                        // "ADD REVIEW"
+                        tempAddReview.addEventListener("click", function () {
+                            // Get item
+                            var tempItemToReview = this.parentElement.parentElement.parentElement.id;
+
+                            // Remove button
+                            this.parentElement.childNodes[(this.parentElement.childNodes.length - 1)].remove();
+
+                            // Create DOM elements
+                            var tempReviewForm = document.createElement("form");
+                            var tempAddReviewText = document.createElement("textarea");
+                            var tempAddReviewFirstName = document.createElement("input");
+                            var tempAddReviewLastInitial = document.createElement("input");
+                            var tempAddReviewAgreeCheckbox = document.createElement("input");
+                            var tempAddReviewAgree = document.createElement("label");
+                            var tempAddReviewSubmit = document.createElement("button");
+
+                            // Add parameters for DOM elements                         
+                            tempAddReviewText.setAttribute("maxlength", "240");
+                            tempAddReviewText.setAttribute("placeholder", "Write your review here");
+                            tempAddReviewText.classList.add("reviewtext");
+                            tempAddReviewFirstName.setAttribute("type", "text");
+                            tempAddReviewFirstName.setAttribute("maxlength", "20");
+                            tempAddReviewFirstName.setAttribute("placeholder", "First Name");
+                            tempAddReviewFirstName.classList.add("firstname");
+                            tempAddReviewLastInitial.setAttribute("type", "text");
+                            tempAddReviewLastInitial.setAttribute("maxlength", "1");
+                            tempAddReviewLastInitial.setAttribute("placeholder", "Initial");
+                            tempAddReviewLastInitial.classList.add("lastname");
+                            tempAddReviewAgree.innerHTML = "I am reviewing a product purchased from Abracapothecary directly, and my review does not contain hateful or inappropriate language.";
+                            tempAddReviewAgree.setAttribute("for", tempItemToReview + "Checkbox");
+                            tempAddReviewAgreeCheckbox.setAttribute("type", "checkbox");
+                            tempAddReviewAgreeCheckbox.setAttribute("id", tempItemToReview + "Checkbox"); // adding the label/id allows you to click on the text to select the checkbox
+                            tempAddReviewSubmit.innerHTML = "Submit Review";
+                            tempAddReviewSubmit.setAttribute("type", "button"); // the element is "button" but type must also be set to button or it refreshes the page
+
+                            // Review error messages
+                            // Created outside of event listener so clicking "Submit" multiple times with the same error doesn't output the message multiple times
+                            var reviewErrorMsgCheckbox = document.createElement("p");
+                            reviewErrorMsgCheckbox.innerHTML = "You must agree to the terms to submit a review.";
+                            reviewErrorMsgCheckbox.classList.add("errorMsg");
+                            var reviewErrorMsgTextarea = document.createElement("p");
+                            reviewErrorMsgTextarea.innerHTML = "Your review must be longer than 10 characters.";
+                            reviewErrorMsgTextarea.classList.add("errorMsg");
+
+
+                            // Submit Review Event Listener
+                            tempAddReviewSubmit.addEventListener("click", function () 
+                            {
+                                /*
+                                    Child Nodes:
+                                    0       First name
+                                    1       Last initial
+                                    2       line break
+                                    3       review textarea
+                                    4       line break
+                                    5       checkbox
+                                    6       checkbox label
+                                    7       line break
+                                    8       submit button
+                                    9/10    error msg(s), if applicable - added to the end so the rest of this doesn't break
+                                */
+                                // Get input from form
+                                var reviewFirstname = this.parentElement.childNodes[0].value;
+                                var reviewLastname = this.parentElement.childNodes[1].value;
+                                var reviewText = this.parentElement.childNodes[3].value;
+                                var reviewCheckbox = this.parentElement.childNodes[5].checked;
+
+                                // Validate input
+                                if (reviewCheckbox === true)
+                                {
+                                    // Output error if review is less than 10 characters
+                                    if (reviewText.length <= 10)
+                                    {
+                                        this.parentElement.appendChild(reviewErrorMsgTextarea);
+                                    }
+                                    // Else, continue
+                                    else
+                                    {
+                                        // If EITHER name is blank, let name = "Anonymous User"
+                                        if (reviewFirstname == "" || reviewLastname == "")
+                                        {
+                                            reviewFirstname = "Anonymous User";
+                                            reviewLastname = "";
+                                        }
+
+                                        // Create new review
+                                        var newReview = new Review(reviewText, reviewFirstname + " " + reviewLastname);
+                                        
+                                        // Add review to item's review array
+                                        for (var iR = 0; iR < aInventory.length; iR++)
+                                        {
+                                            if (tempItemToReview == aInventory[iR].id)
+                                            {
+                                                aInventory[iR].reviews.push(newReview);
+                                                alert("Review added! Thank you for helping us improve :-)");
+                                                displayInventory();
+                                            }
+                                        } // end "add item to review" for
+                                    } // end "review is long enough" if
+                                } // end "textbox is checked" if
+                                else
+                                {
+                                    // Output error if checkbox is not selected
+                                    this.parentElement.appendChild(reviewErrorMsgCheckbox);
+                                }
+                            }); // end event listener
+
+                            // Add elements to DOM
+                            tempReviewForm.appendChild(tempAddReviewFirstName); // 0
+                            tempReviewForm.appendChild(tempAddReviewLastInitial);
+                            tempReviewForm.appendChild(tempBr.cloneNode(true));
+                            tempReviewForm.appendChild(tempAddReviewText);
+                            tempReviewForm.appendChild(tempBr.cloneNode(true));
+                            tempReviewForm.appendChild(tempAddReviewAgreeCheckbox);
+                            tempReviewForm.appendChild(tempAddReviewAgree);
+                            tempReviewForm.appendChild(tempBr.cloneNode(true));
+                            tempReviewForm.appendChild(tempAddReviewSubmit);
+
+                            document.getElementById(tempItemToReview).appendChild(tempReviewForm);
+                        });
+
+                        // Add item to page
+                        
+                        // Visible by default
+                        tempDiv.appendChild(tempH3);
+                        tempDiv.appendChild(tempImage);
+                        tempDiv.appendChild(tempBr.cloneNode(true));
+                        tempDiv.appendChild(tempPrice);
+                        tempDiv.appendChild(tempDescHeader);
+                        tempDiv.appendChild(tempDescription);
+                        tempDiv.appendChild(tempBr.cloneNode(true));
+                        tempDiv.appendChild(tempCartQty);
+                        tempDiv.appendChild(tempCartButton);
+                        tempDiv.appendChild(tempBr.cloneNode(true));
+                        tempDiv.appendChild(tempDetails);
+
+                        // Hidden by default
+                        tempDivDetails.appendChild(tempId);
+                        tempDivDetails.appendChild(tempDot.cloneNode(true));
+                        tempDivDetails.appendChild(tempDept);
+                        tempDivDetails.appendChild(tempBr.cloneNode(true));
+                        tempDivDetails.appendChild(tempQty);
+                        tempDivDetails.appendChild(tempBr.cloneNode(true));
+
+                        // Reviews
+                        tempDivDetails.appendChild(tempReviewHeader);
+                        tempDivDetails.appendChild(tempReviewDiv);
+
+
+                        // Add details div to main item div
+                        tempDiv.appendChild(tempDivDetails);
+
+                        // Add item div to store
+                        divStoreStock.appendChild(tempDiv);
+                        
+                    } // end if
+
+                } // end for
+
+            } // end displayInventory()
+
+            /*
+                displayCart()
+                Displays the cart.
+            */
+
+            function displayCart()
+            {
+                // Access DOM elements
+                var ulCart = document.getElementById("ulCart");
+                var ulCartTotals = document.getElementById("ulCartTotals");
+
+                // If cart is empty, display "Your cart is empty." & clear any totals
+                if (aCart.length == 0)
+                {
+                    ulCart.innerHTML = "<li>Your cart is empty.</li>";
+                    ulCartTotals.innerHTML = "";
+                }
+
+                // Otherwise, output aCart items to cart
+                else
+                {
+                    // Clear output
+                    ulCart.innerHTML = "";
+                    ulCartTotals.innerHTML = "";
+
+                    // For each item in cart, add to page
+                    for (var i = 0; i < aCart.length; i++)
+                    {
+                        // Create list item
+                        var tempLi = document.createElement("li");
+                        tempLi.innerHTML = outputCartItem(aCart[i].qtyInCart, aCart[i].name, aCart[i].priceCAD);
+                        tempLi.setAttribute("id", aCart[i].id);
+                        
+                        // Create "Remove" button
+                        var tempRemove = document.createElement("img");
+                        tempRemove.setAttribute("src", "images/trashicon.png");
+                        tempRemove.classList.add("trashIcon");
+
+                        // Remove from cart event listener
+                        tempRemove.addEventListener("click", function() {
+                            // Get item ID
+                            var itemToRemove = this.parentElement.id;
+                            
+                            // Find item in cart
+                            for (var iR = 0; iR < aCart.length; iR++)
+                            {
+                                if (itemToRemove == aCart[iR].id)
+                                {
+                                    // Remove item from cart
+                                    aCart.splice(iR, 1);
+
+                                    // Update stock and cart
+                                    displayCart();
+                                    displayInventory();
+                                }
+                            }
+                        });
+
+                        // Add created elements to page
+                        tempLi.appendChild(tempRemove);
+                        ulCart.appendChild(tempLi);
+                        ulCart.appendChild(document.createElement("hr"));
+                    }
+
+                    // Calculate totals
+                    var subtotal = 0;
+                    var totalShipping = 0;
+                    var totalHST = 0;
+                    const HST = 0.13;
+
+                    for (var i = 0; i < aCart.length; i++)
+                    {
+                        var item = aCart[i];
+                        subtotal += (item.qtyInCart * item.priceCAD);
+                        totalShipping += (item.qtyInCart * item.shipCost);
+                    }
+
+                    totalHST = (subtotal + totalShipping) * HST;
+
+                    var finalTotal = subtotal + totalShipping + HST;
+
+                    // Create DOM elements
+                    var subtotalLi = document.createElement("li");
+                    var shippingLi = document.createElement("li");
+                    var hstLi = document.createElement("li");
+                    var totalLi = document.createElement("li");
+
+                    // Populate new DOM elements
+                    subtotalLi.innerHTML = "Subtotal: " + outputPrice(subtotal, selectedCurrency);
+                    shippingLi.innerHTML = "Shipping: " + outputPrice(totalShipping, selectedCurrency);
+                    hstLi.innerHTML = "Tax (HST): " + outputPrice(totalHST, selectedCurrency);
+                    totalLi.innerHTML = "Total: " + outputPrice(finalTotal, selectedCurrency);
+
+
+                    ulCartTotals.appendChild(subtotalLi);
+                    ulCartTotals.appendChild(shippingLi);
+                    ulCartTotals.appendChild(hstLi);
+                    ulCartTotals.appendChild(totalLi);
+                }
+            } // end displayCart()
+
+
+            /*
+                HELPER FUNCTIONS
+            */
+
+            /*
+                friendlyDateTime(d)
+                Accepts a date and outputs in a friendly manner
+                Output: MMM DD, YYYY | hh:mm - eg. "Mar 30, 1992 | 17:15"
+            */
+
+            function friendlyDateTime(d)
+            {
+                // Array for the months of the year
+                var aMonths = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+                // Construct friendly date
+                var tempDate = "";
+                tempDate += aMonths[d.getMonth()]; // month
+                tempDate += " " + d.getDate(); // date
+                tempDate += ", " + d.getFullYear(); // year
+                tempDate += " | " + d.getHours(); // hours
+                
+                // Add leading 0 for minute value if < 10
+                if (d.getMinutes() < 10)
+                {
+                    tempDate += ":0" + d.getMinutes(); // minutes if < 10
+                }
+                else
+                {
+                    tempDate += ":" + d.getMinutes(); // minutes if >= 10
+                }
+
+                return tempDate;
+            }
+        
+            /*
+                outputPrice(amountCAD, currency)
+                Accepts a price in CAD and a currency and returns the converted amount (if applicable) as a string to be output
+                Format: $x.xx for USD/CAD; xgp for gp
+            */
+
+            function outputPrice(amountCAD, currency)
+            {
+            var tempPrice = 0;
+            var tempPriceString = "";
+
+            // If in USD, convert & output
+            if (currency == "usd")
+            {
+                tempPrice = (amountCAD * cadToUSD).toFixed(2);
+                tempPriceString = "$" + tempPrice;
+                return tempPriceString;
+            }
+            // If in CAD, output
+            else if (currency == "cad")
+            {
+                tempPriceString = "$" + amountCAD.toFixed(2);
+                return tempPriceString;
+            }
+            // If price is in gp, convert & output
+            else if (currency == "gp")
+            {
+                tempPrice = Math.ceil(amountCAD * cadToGP);
+                tempPriceString = tempPrice + "gp";
+                return tempPriceString;
+            }  
+            } // end outputPrice
+
+            /*
+                outputCartItem(qty, name, priceCAD)
+                Accepts a quantity, name and price (in CAD) and outputs a string that includes the quantity, name and total price, with a string of ...s between to fill the space
+            */
+
+            function outputCartItem(qty, name, priceCAD)
+            {
+                // Calculate number of .s
+                var n = (40 - name.length - outputPrice((priceCAD * qty), selectedCurrency).length);
+
+                // Create variable for string
+                var dotsString = "";
+
+                // Add dots
+                for (var dotsOutput = 0; dotsOutput <= n; dotsOutput++)
+                {
+                    dotsString += ".";
+                }
+
+                return (qty + " x " + name + dotsString + outputPrice((priceCAD * qty), selectedCurrency));
+                
+            }
+            /*
+                populateDeptDropdown()
+                Checks each stock item for its department, adds the departments to an array, then outputs the array as dropdown options
+            */
+
+            function populateDeptDropdown()
+            {
+                // Get DOM element & clear existing
+                var selectDept = document.getElementById("selectDept");
+
+                // Add departments to array
+                var aDepts = [];
+                for (var i = 0; i < aInventory.length; i++)
+                {
+                    // Check to see if department is already listed; if not, add to array
+                    if (aDepts.includes(aInventory[i].dept) == false)
+                    {
+                        aDepts.push(aInventory[i].dept);
+                    }
+                } // end for
+
+                // Add array to DOM
+                for (var i = 0; i < aDepts.length; i++)
+                {
+                    // Create temp option
+                    var tempOption = document.createElement("option");
+                    tempOption.value = aDepts[i];
+                    tempOption.innerHTML = aDepts[i];
+
+                    // Add to page
+                    selectDept.appendChild(tempOption);
+                } // end for
+                
+
+            } // end populateDeptDropdown
+        
+        </script>
+    </body>
+</html>

@@ -1,0 +1,316 @@
+/*
+    Color Scheme:
+    #F9FAF4 (white smoke) - main background
+    #4A6163 (deep space sparkle) - price
+    #F9A66C (sandy brown) - <strong> 
+    #FFC94B (pastel orange) -
+    #F17A7E (light coral) - header background, heading borders, horizontal rules
+    From: https://graphicmama.com/blog/website-color-schemes/
+
+    
+*/
+
+/* NOTE: CSS is mobile-first; for styling for larger screens, see media queries (end of CSS file) */
+
+/* === GENERAL === */
+
+html {
+    scroll-behavior: smooth;
+}
+
+html, body {
+    background-color: #F9FAF4;
+    font-family: calibri;
+    margin: 0;
+}
+
+input, textarea, select {
+    border: 3px solid #F17A7E;
+    font-family: calibri, sans-serif;
+    font-size: 16px;
+}
+
+button {
+    background-color: #F17A7E;
+    border: none;
+    font-family: 'Berkshire Swash', cursive;
+    font-size: 16px;
+    padding: 5px;
+    margin: 10px 0 0 5px;
+}
+
+button:hover {
+    background-color: #F9A66C;
+}
+
+strong {
+    color: #F9A66C;
+}
+
+/*  === HEADER === */
+
+header {
+    background-color: #F17A7E;
+    color: #333;
+    font-family: 'Berkshire Swash', cursive;
+    width: 100%;
+    max-height: 5%;
+    margin: 0 0 0 0;
+    position: sticky;
+    top: 0;
+    left: 0;
+    right: 0;
+    box-shadow: 0px 1px 4px;
+
+    /* = GRID = */
+    display: inline-grid;
+    grid-template-columns: 6fr 1fr;
+    grid-template-rows: 50% 30%;
+    justify-content: stretch;
+}
+
+header div {
+    grid-column-start: 2;
+    grid-row: 1 / span 3;
+    align-self: center;
+    padding: 10px;
+}
+
+#cartIcon {
+    padding: 5px;
+    max-width: 70%;
+    max-height: 70%;
+    display: block;
+    margin: auto;
+}
+
+h1 {
+    font-size: 7.5vw;
+    padding: 5px 0px 0px 5px;
+    margin: 0;
+    grid-column-start: 1;
+    grid-row-start: 1;
+}
+
+#spanDateTime {
+    font-size: 4vw;
+    padding: 5px 0px 0px 5px;
+    grid-column-start: 1;
+    grid-row-start: 2;
+}
+
+
+
+
+/* === MAIN === */
+
+/* H2 - "Welcome to the Abracapothecary", "Our Inventory" and "Cart" headings */
+h2 {
+    text-align: center;
+    border-top: 1px double #F17A73;
+    border-bottom: 1px double #F17A73;
+    max-width: 75%;
+    margin: auto;
+    font-family: 'Berkshire Swash', cursive;
+}
+
+main {
+    margin: 5%;
+}
+
+main hr {
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    border-bottom: 5px double #F17A73;
+    margin: 40px;
+}
+
+#divAbout {
+    text-align: center;
+    max-width: 75%;
+    margin: auto;
+}
+
+/* = STORE = */
+
+#divStoreNav {
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+#divStoreStock {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+}
+
+.divItem {
+    text-align: center;
+    border-radius: 25px;
+    background-color: white;
+    box-shadow: 5px 5px 9px 0px #F4F4F4;
+    padding: 10px 20px;
+}
+
+/* Product names */
+.divItem h3 {
+    margin: 1% 0 0 0;
+    font-family: 'Berkshire Swash', cursive
+}
+
+/* "Item Description" and "More Information" */
+.divItem h4 {
+    font-family: 'Berkshire Swash', cursive
+}
+
+.moreInfo:hover {
+    color: #F9A66C;
+}
+
+/* Product Images */
+.divItem img {
+    margin: 2.5%;
+    max-width: 50%;
+    max-height: min(200px, 50%);
+}
+
+.price {
+    font-weight: bold;
+    color: #4A6163;
+    font-family: 'Berkshire Swash', cursive
+}
+
+/* Used for hiding details div */
+.hidden {
+    display: none;
+}
+
+/* = REVIEWS = */
+
+.firstname {
+    width: 100px;
+    margin-left: 0;
+}
+
+.lastname {
+    width: 40px;
+}
+
+textarea {
+    resize: none;
+    width: 200px;
+}
+
+input[type=checkbox] {
+    margin: 0 5px 0 0;
+}
+
+.reviewDiv button {
+    display: block;
+    text-align: center;
+}
+
+form {
+    text-align: left;
+}
+
+form h4 {
+    text-align: center;
+}
+
+form input {
+    margin: 10px;
+}
+
+.errorMsg {
+    color: #F17A73;
+}
+
+/* = CART = */
+#divCart {
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+}
+#divCart hr {
+    border-top: 0;
+    border-left: 0;
+    border-right: 0;
+    border-bottom: 1px dashed black;
+    padding-left: 0;
+    padding-right: 0;
+    margin: 5px auto 5px auto;
+    width: 100%;
+}
+
+ul {
+    text-align: center;
+    width: 80%;
+    margin: auto;
+    padding: 10px 0 0 0;
+    list-style: none;
+}
+
+.trashIcon {
+    width: 20px;
+    margin-left: 15px;
+}
+
+/* Back to Top */
+.backToTop {
+    display: block;
+    text-align: center;
+    font-family: 'Berkshire Swash', cursive;
+    padding: 40px 0 0 0;
+}
+
+/* === FOOTER === */
+
+footer {
+    text-align: center;
+}
+
+
+/*
+    MEDIA QUERIES
+*/
+
+/* Screens 576px and wider */
+@media screen and (min-width: 576px) {
+
+    /* GENERAL */
+    main {
+        margin: 10px 5%;
+    }
+
+    h2 {
+        font-size: 36px;
+    }
+
+    /* HEADER */
+    h1, #spanDateTime {
+        font-size: revert;
+    }
+
+    #cartIcon {
+        max-width: 55px;
+        max-height: 55px;
+    }
+
+    /* STORE */
+    #divStoreStock {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Screens 992px and wider */
+@media screen and (min-width: 992px) {
+
+    main {
+        margin: 5% 10%;
+    }
+
+    #divStoreStock {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
